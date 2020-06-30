@@ -25,9 +25,15 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = $this->createTreeBuilder();
-        $treeBuilder
-            ->root('ivory_ck_editor')
+        $treeBuilder = new TreeBuilder('ivory_ck_editor');
+        if (method_exists($treeBuilder, 'getRootNode')) {
+            $rootNode = $treeBuilder->getRootNode();
+        } else {
+            // BC layer for symfony/config 4.1 and older
+            $rootNode = $treeBuilder->root('ivory_ck_editor');
+        }
+
+        $rootNode
             ->children()
                 ->booleanNode('enable')->end()
                 ->booleanNode('async')->end()
@@ -49,7 +55,7 @@ class Configuration implements ConfigurationInterface
                 ->append($this->createToolbarsNode())
             ->end();
 
-        return $treeBuilder;
+        return $rootNode;
     }
 
     /**
@@ -177,14 +183,20 @@ class Configuration implements ConfigurationInterface
      */
     private function createNode($name)
     {
-        return $this->createTreeBuilder()->root($name);
+        return $this->createTreeBuilderNode($name);
     }
 
-    /**
-     * @return TreeBuilder
-     */
-    private function createTreeBuilder()
+    private function createTreeBuilderNode($name)
     {
-        return new TreeBuilder();
+        $builder = new TreeBuilder($name);
+
+        if (method_exists($builder, 'getRootNode')) {
+            $node = $builder->getRootNode();
+        } else {
+            // BC layer for symfony/config 4.1 and older
+            $node = $builder->root($name);
+        }
+
+        return $node;
     }
 }
